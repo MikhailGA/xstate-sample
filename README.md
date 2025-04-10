@@ -1,54 +1,76 @@
-# React + TypeScript + Vite
+# Стейт-машины во фронтенд-разработке
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Введение
+Этот репозиторий демонстрирует использование стейт-машин для управления состоянием во фронтенд-приложениях. Этот подход делает логику приложения более предсказуемой, удобной для тестирования и масштабируемой.
 
-Currently, two official plugins are available:
+## Что такое стейт-машина?
+**Конечный автомат (Finite State Machine, FSM)** — это модель, которая описывает поведение системы через:
+- **Конечное число состояний** (например, `idle`, `loading`, `success`, `error`)
+- **Переходы между состояниями** (триггеры/события)
+- **Действия**, выполняемые при переходах
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+В отличие от традиционного управления состоянием (например, React-хуков или Redux), стейт-машины явно задают правила переходов, уменьшая вероятность неожиданных ошибок.
 
-## Expanding the ESLint configuration
+## Пример: Загрузка данных
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Традиционный подход (без стейт-машины)
+```javascript
+const [data, setData] = useState(null);
+const [isLoading, setIsLoading] = useState(false);
+const [error, setError] = useState(null);
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
+const fetchData = async () => {
+  setIsLoading(true);
+  try {
+    const res = await api.getData();
+    setData(res);
+    setError(null);
+  } catch (err) {
+    setError(err);
+  } finally {
+    setIsLoading(false);
+  }
+};
+```
+
+**Проблемы:**
+- Множество несвязанных состояний
+- Возможны противоречивые комбинации (например, `isLoading = true` и `error !== null`)
+
+### Подход со стейт-машиной (XState или кастомная реализация)
+```javascript
+const states = {
+  idle: { on: { FETCH: "loading" } },
+  loading: { 
+    on: { 
+      SUCCESS: "success", 
+      FAILURE: "error" 
     },
+    effect: () => { /* Вызов API */ }
   },
-})
+  success: { data: null },
+  error: { message: "" }
+};
+
+let currentState = "idle";
+
+function transition(state, event) {
+  const nextState = states[state]?.on?.[event];
+  if (nextState) currentState = nextState;
+}
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+**Преимущества:**
+- Явно определены состояния и переходы
+- Невозможно попасть в недопустимое состояние (например, `loading` и `success` одновременно)
+- Легко добавлять побочные эффекты (логирование, аналитика)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Библиотеки для работы со стейт-машинами
+- **[XState](https://xstate.js.org/)** - Наиболее популярная, с визуальным редактором
+- **[Zustand](https://github.com/pmndrs/zustand)** + стейт-машины - Гибридный подход
+- Собственная реализация - Для простых случаев
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Когда использовать стейт-машины?
+✅ Сложная UI-логика (формы, многошаговые процессы)  
+✅ Приложения с четкими бизнес-правилами (банкинг, CRM)  
+✅ Когда важно избегать "невозможных" состояний  
