@@ -21,6 +21,10 @@ export const fetchMachine = setup({
   actors: {
     fetchData: fromPromise(fakeFetch),
   },
+  actions: {
+    setData: assign((_, params: { data: string })=> ({ data: params.data })),
+    setError: assign((_, params: { error: Error })=> ({ error: params.error })),
+  }
 }).createMachine({
   /** @xstate-layout N4IgpgJg5mDOIC5QDMwBcDGALAdASwgBswBiAMQFEAVAYQAkBtABgF1FQAHAe1jzTy4A7diAAeiACwAmAMw4AjPJkAOWRICcAdgBsyphM0AaEAE9EAWikBWTThlNNVm8o2amNgL4fjqTLkJcAIYQeIJQJBBCYPiCAG5cANbRvtgAIoFogcxsSCDcvPxCIuIIEqo4VlISMlLy6kw1MppGpog6OEzyVnoyEkpS2vISVl4+6Ng4AcGh4WAATnNcczgchBnISwC2OClY6ZnZIvl8AsK5JTW26jXamvXK6lLqWsZmCO2d3Q19N0MSoyBdjhYABXDAYOCwcjUeiHXLHQpnUAlbTPHC6GR1ZQyKxMR42V6IbRSBTqeRMKoyLTSKzqbQAoHzRZzEgAJQoAGVqHDODwTkVzoh5E8cGS6lJlDYtHpKoSEOZtNocMo3PJmn0qqjsV5vCBBFwIHARLsjnzEcVEMp5KLFI9JXdNDKpHLzNI5JoqVUsfUcRJ6bqgQRiKaCqcLaV5ErrtZ7pG1bptC6ZDIldV8bSmjYBgzxv4giEwiH+UixIhenIVUwHNorFS+g4XfJsXYpBSnJUHFaPTm-MCwRDYPB4Waw4KELiJKLlLpNF17NppBI5bJbKpmk2rNU-RiexMmUsi+ax711DhNAM-VKHtPE60ECvlVJ15Kt4rpzqPEA */
   id: 'fetch',
@@ -37,8 +41,8 @@ export const fetchMachine = setup({
       invoke: {
         id: 'fetchData', // Идентификатор актора
         src: 'fetchData', // Вызываем сервис (Promise/async)
-        onDone: { target: 'success', actions: assign({ data:  ({ event }) => event.output.data}) },
-        onError: { target: 'error', actions: assign({ error: ({ event }) => event.error as Error}) },
+        onDone: { target: 'success', actions: { type: 'setData', params: ({ event }) => event.output } },
+        onError: { target: 'error', actions: { type: 'setError', params: ({ event }) => ({ error: event.error as Error }) } },
       } 
     },
     success: {
