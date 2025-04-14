@@ -1,5 +1,8 @@
 import { createActorContext } from '@xstate/react';
 import {  assign,  fromPromise, setup } from 'xstate';
+import { createBrowserInspector } from '@statelyai/inspect';
+
+const { inspect } = createBrowserInspector();
 
 
 const fakeFetch = () => new Promise<{ data: string }>((resolve, reject) => {
@@ -54,8 +57,9 @@ export const fetchMachine = setup({
   }
 });
 
-export const FetchMachineContext = createActorContext(fetchMachine);
-
+export const FetchMachineContext = createActorContext(fetchMachine, {
+  inspect,
+ });
 
 // // , {
 //   actions: {
