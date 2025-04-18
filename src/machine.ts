@@ -41,6 +41,7 @@ export const fetchMachine = setup({
       on: { FETCH: 'loading' }
     },
     loading: {
+      entry: assign({ data: null, error: null }), // Сбрасываем состояние
       invoke: {
         id: 'fetchData', // Идентификатор актора
         src: 'fetchData', // Вызываем сервис (Promise/async)
@@ -52,7 +53,7 @@ export const fetchMachine = setup({
       on: { FETCH: 'loading' }
     },
     error: {
-      on: { RESET: 'idle' }
+      on: { RESET: {  target: 'idle' } }
     }
   }
 });
